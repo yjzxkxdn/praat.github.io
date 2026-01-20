@@ -930,6 +930,7 @@ static void menu_cb_spectrogramSettings (SoundAnalysisArea me, EDITOR_ARGS) {
 		POSITIVE (viewTo,       U"right View range (Hz)", my default_spectrogram_viewTo())
 		POSITIVE (windowLength, U"Window length (s)",     my default_spectrogram_windowLength())
 		POSITIVE (dynamicRange, U"Dynamic range (dB)",    my default_spectrogram_dynamicRange())
+		OPTIONMENU_ENUM (kSpec_colourMap, colourMap, U"Colour map", my default_spectrogram_colourMap())
 		MUTABLE_COMMENT (note1, U"")
 		MUTABLE_COMMENT (note2, U"")
 	EDITOR_OK
@@ -937,6 +938,7 @@ static void menu_cb_spectrogramSettings (SoundAnalysisArea me, EDITOR_ARGS) {
 		SET_REAL (viewTo,       my instancePref_spectrogram_viewTo())
 		SET_REAL (windowLength, my instancePref_spectrogram_windowLength())
 		SET_REAL (dynamicRange, my instancePref_spectrogram_dynamicRange())
+		SET_ENUM (colourMap, kSpec_colourMap, my instancePref_spectrogram_colourMap())
 		if (my instancePref_spectrogram_timeSteps()          != Melder_atof (my default_spectrogram_timeSteps()) ||
 			my instancePref_spectrogram_frequencySteps()     != Melder_atof (my default_spectrogram_frequencySteps()) ||
 			my instancePref_spectrogram_method()             != my default_spectrogram_method() ||
@@ -962,6 +964,7 @@ static void menu_cb_spectrogramSettings (SoundAnalysisArea me, EDITOR_ARGS) {
 		my setInstancePref_spectrogram_viewTo (viewTo);
 		my setInstancePref_spectrogram_windowLength (windowLength);
 		my setInstancePref_spectrogram_dynamicRange (dynamicRange);
+		my setInstancePref_spectrogram_colourMap (colourMap);
 		my d_spectrogram. reset();
 		FunctionEditor_redraw (my functionEditor());
 	EDITOR_END
@@ -1090,7 +1093,7 @@ static void menu_cb_paintVisibleSpectrogram (SoundAnalysisArea me, EDITOR_ARGS) 
 			my instancePref_spectrogram_viewFrom(), my instancePref_spectrogram_viewTo(),
 			my instancePref_spectrogram_maximum(), my instancePref_spectrogram_autoscaling(),
 			my instancePref_spectrogram_dynamicRange(), my instancePref_spectrogram_preemphasis(),
-			my instancePref_spectrogram_dynamicCompression(), garnish
+			my instancePref_spectrogram_dynamicCompression(), garnish, my instancePref_spectrogram_colourMap()
 		);
 		FunctionArea_garnishPicture (me);
 		DataGui_closePraatPicture (me);
@@ -2573,7 +2576,7 @@ static void SoundAnalysisArea_v_draw_analysis (SoundAnalysisArea me) {
 			my instancePref_spectrogram_viewFrom(), my instancePref_spectrogram_viewTo(),
 			my instancePref_spectrogram_maximum(), my instancePref_spectrogram_autoscaling(),
 			my instancePref_spectrogram_dynamicRange(), my instancePref_spectrogram_preemphasis(),
-			my instancePref_spectrogram_dynamicCompression()
+			my instancePref_spectrogram_dynamicCompression(), my instancePref_spectrogram_colourMap()
 		);
 	}
 	if (my instancePref_pitch_show())
