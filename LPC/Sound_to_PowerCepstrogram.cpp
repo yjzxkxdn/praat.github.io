@@ -52,45 +52,41 @@ autoPowerCepstrogram Sound_to_PowerCepstrogram (constSound me, double pitchFloor
 		MelderThread_PARALLEL (nFrames, 10) {
 			autoSoundFrames soundFrames = SoundFrames_createForIntoSampled (input.get(), output.get(), effectiveAnalysisWidth, windowShape, subtractFrameMean);
 			autoVEC fourierSamples = raw_VEC (numberOfFourierSamples);
-			autoVEC onesidedPSD = raw_VEC (numberOfFrequencies);
+			autoVEC onesidedPowerSpectrum = raw_VEC (numberOfFrequencies);
 			autoNUMFourierTable fourierTable = NUMFourierTable_create (numberOfFourierSamples);		// of dimension numberOfFourierSamples;
 			MelderThread_FOR (iframe) {
 				/*
 					Get average power spectrum of channels
-					Let X(f) be the Fourier Transform of x(t) defined on the domain [-F,+F].
-					Power P[f] of a spectral component X(f):
-						P[f] =	|X(f)/sqrt(2)|^2 = 0.5|X(f)|^2 for f != 0,
-								|X(0)|^2 for f=0.
-					Because we add negative and positive frequencies:
-					The onesidedPSD [f] =  2 * P (f) = X(f)^2 for f >= 0 and |X(0)|^2 for f=0
-					The bin width of the first and last frequency in the onesidedPSD is half the bin width at the other frequencies
+					Let X(f) be the Fourier Transform, defined on the domain [-F,+F], of the real signal x(t).
+					The power spectrum is defined as the Fourier transform of the autocorrelation of x(t) which
+					equals |X(f)|^2
+					The one-sided power spectrum is then P(f)= |X(f)|^2+|X(-f)|^2 = 2|X(f)|^2 for 0 <= f <= F
+					The bin width of the first and last frequency in the onesidedPowerSpectrum is half the bin width at the other frequencies
 					Do scaling and averaging together
 				*/
 				Sound sound = soundFrames -> getFrame (iframe);
-				onesidedPSD.get()  <<=  0.0;
+				onesidedPowerSpectrum.get()  <<=  0.0;
 				for (integer ichannel = 1; ichannel <= numberOfChannels; ichannel ++) {
 					fourierSamples.part (1, soundFrameSize)  <<=  sound -> z.row (ichannel);
 					fourierSamples.part (soundFrameSize + 1, numberOfFourierSamples)  <<=  0.0;
 					NUMfft_forward (fourierTable.get(), fourierSamples.get());
-					onesidedPSD [1] += fourierSamples [1] * fourierSamples [1];
+					onesidedPowerSpectrum [1] += fourierSamples [1] * fourierSamples [1];
 					for (integer i = 2; i < numberOfFrequencies; i ++) {
 						double re = fourierSamples [2 * i - 2], im = fourierSamples [2 * i - 1];
-						onesidedPSD [i] += re * re + im * im;
+						onesidedPowerSpectrum [i] += re * re + im * im;
 					}
-					onesidedPSD [numberOfFrequencies] += fourierSamples [numberOfFourierSamples] * fourierSamples [numberOfFourierSamples];
+					onesidedPowerSpectrum [numberOfFrequencies] += fourierSamples [numberOfFourierSamples] * fourierSamples [numberOfFourierSamples];
 				}
-				onesidedPSD.get()  *=  powerScaling / numberOfChannels; // scaling and averaging over channels
-				onesidedPSD [1] *= 0.5; // half bin width
-				onesidedPSD [numberOfFrequencies] *= 0.5; // half bin width
+				onesidedPowerSpectrum.get()  *=  2.0 * powerScaling / numberOfChannels; // scaling and averaging over channels
 				/*
 					Get log power.
 				*/
-				fourierSamples [1] = log (onesidedPSD [1] + 1e-300);
+				fourierSamples [1] = log (onesidedPowerSpectrum [1] + 1e-300);
 				for (integer i = 2; i < numberOfFrequencies; i ++) {
-					fourierSamples [2 * i - 2] = log (onesidedPSD [i] + 1e-300);
+					fourierSamples [2 * i - 2] = log (onesidedPowerSpectrum [i] + 1e-300);
 					fourierSamples [2 * i - 1] = 0.0;
 				}
-				fourierSamples [numberOfFourierSamples] = log (onesidedPSD [numberOfFrequencies]);
+				fourierSamples [numberOfFourierSamples] = log (onesidedPowerSpectrum [numberOfFrequencies]);
 				/*
 					Inverse transform
 				*/
