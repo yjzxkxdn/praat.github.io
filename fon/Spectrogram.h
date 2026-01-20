@@ -20,6 +20,7 @@
 
 #include "Matrix.h"
 #include "Graphics.h"
+#include "Spec_enums.h"
 
 Thing_define (Spectrogram, Matrix) {
 	void v1_info ()
@@ -62,11 +63,12 @@ autoSpectrogram Spectrogram_create (double tmin, double tmax, integer nt, double
 
 void Spectrogram_paintInside (constSpectrogram me, Graphics g,
 	double tmin, double tmax, double fmin, double fmax, double maximum, bool autoscaling,
-	double dynamicRange, double preemphasis, double dynamicCompression);
+	double dynamicRange, double preemphasis, double dynamicCompression, 
+	kSpec_colourMap colourMap = kSpec_colourMap::GREY);
 void Spectrogram_paint (constSpectrogram me, Graphics g,
 	double tmin, double tmax, double fmin, double fmax, double maximum, bool autoscaling,
 	double dynamicRange, double preemphasis, double dynamicCompression,
-	bool garnish);
+	bool garnish, kSpec_colourMap colourMap = kSpec_colourMap::GREY);
 /*
 	Function:
 		Draw me to a Graphics.
