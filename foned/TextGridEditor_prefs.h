@@ -21,6 +21,8 @@ Prefs_begin (TextGridEditor)
 	ClassPrefs_overrideInt        (TextGridEditor, shellWidth,               1, U"800")
 	ClassPrefs_overrideInt        (TextGridEditor, shellHeight,              1, U"600")
 	InstancePrefs_overrideBool    (TextGridEditor, showSelectionViewer,      1, true)
+	InstancePrefs_addDouble       (TextGridEditor, textGridHeight,           2, U"0.00")   // 0 = automatic
+	InstancePrefs_addDouble       (TextGridEditor, soundHeight,              2, U"0.00")   // 0 = automatic
 
 Prefs_end (TextGridEditor)
 

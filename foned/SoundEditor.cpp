@@ -21,8 +21,59 @@
 
 Thing_implement (SoundEditor, FunctionEditor, 0);
 
+#include "Prefs_define.h"
+#include "SoundEditor_prefs.h"
+#include "Prefs_install.h"
+#include "SoundEditor_prefs.h"
+#include "Prefs_copyToInstance.h"
+#include "SoundEditor_prefs.h"
+
 static void menu_cb_SoundEditorHelp (SoundEditor, EDITOR_ARGS) { Melder_help (U"SoundEditor"); }
 static void menu_cb_LongSoundEditorHelp (SoundEditor, EDITOR_ARGS) { Melder_help (U"LongSoundEditor"); }
+
+static void menu_cb_AreaHeights (SoundEditor me, EDITOR_ARGS) {
+	EDITOR_FORM (U"Area heights", nullptr)
+		REAL (soundHeight, U"Sound height", U"0.5")
+	EDITOR_OK
+		SET_REAL (soundHeight, my soundAreaHeight())
+	EDITOR_DO
+		my setInstancePref_soundHeight (Melder_clipped (0.1, soundHeight, 0.9));
+		my v_distributeAreas ();
+		FunctionEditor_redraw (me);
+	EDITOR_END
+}
+
+void structSoundEditor :: v_createMenus () {
+	structFunctionEditor :: v_createMenus ();
+	EditorMenu viewMenu = Editor_addMenu (this, U"View", 0);
+	EditorMenu_addCommand (viewMenu, U"Area heights...", 0, menu_cb_AreaHeights);
+}
+
+bool structSoundEditor :: v_mouseInWideDataView (GuiDrawingArea_MouseEvent event, double x_world, double globalY_fraction) {
+	if (our soundAnalysisArea() -> hasContentToShow ()) {
+		const double dataBottom = our dataBottom_pxlt();
+		const double dataHeight = our dataTop_pxlt() - dataBottom;
+		const double y_px = dataBottom + globalY_fraction * dataHeight;
+		const double boundary_px = dataBottom + our soundAreaHeight() * dataHeight;
+		if (event -> isClick ()) {
+			our d_draggingBoundary = ( y_px >= boundary_px - 25.0 && y_px <= boundary_px + 5.0 );
+			if (our d_draggingBoundary) {
+				our setInstancePref_soundHeight (our soundAreaHeight());   // freeze the automatic layout
+				return true;
+			}
+		} else if (our d_draggingBoundary) {
+			if (event -> isDrag ()) {
+				our setInstancePref_soundHeight (Melder_clipped (0.1, globalY_fraction, 0.9));
+				our v_distributeAreas ();
+				FunctionEditor_redraw (this);
+			} else if (event -> isDrop ()) {
+				our d_draggingBoundary = false;
+			}
+			return true;
+		}
+	}
+	return structFunctionEditor :: v_mouseInWideDataView (event, x_world, globalY_fraction);
+}
 
 void structSoundEditor :: v_createMenuItems_help (EditorMenu menu) {
 	structFunctionEditor :: v_createMenuItems_help (menu);

@@ -26,6 +26,8 @@ Thing_define (SoundEditor, FunctionEditor) {
 	DEFINE_FunctionArea (1, SoundArea, soundArea)
 	DEFINE_FunctionArea (2, SoundAnalysisArea, soundAnalysisArea)
 
+	bool d_draggingBoundary;
+
 	void v1_dataChanged (Editor sender) override {
 		SoundEditor_Parent :: v1_dataChanged (sender);
 		Thing_cast (SampledXY, soundOrLongSound, our data());
@@ -34,10 +36,18 @@ Thing_define (SoundEditor, FunctionEditor) {
 	}
 	void v_createMenuItems_help (EditorMenu menu)
 		override;
+	void v_createMenus () override;
+	bool v_mouseInWideDataView (GuiDrawingArea_MouseEvent event, double x_world, double globalY_fraction)
+		override;
+	double soundAreaHeight () {
+		const double soundHeight = our instancePref_soundHeight();
+		return ( soundHeight > 0.0 ? Melder_clipped (0.1, soundHeight, 0.9) : 0.5 );
+	}
 	void v_distributeAreas () override {
 		if (our soundAnalysisArea() -> hasContentToShow ()) {
-			our soundArea() -> setGlobalYRange_fraction (0.5, 1.0);
-			our soundAnalysisArea() -> setGlobalYRange_fraction (0.0, 0.5);
+			const double soundHeight = our soundAreaHeight();
+			our soundArea() -> setGlobalYRange_fraction (soundHeight, 1.0);
+			our soundAnalysisArea() -> setGlobalYRange_fraction (0.0, soundHeight);
 		} else {
 			our soundArea() -> setGlobalYRange_fraction (0.0, 1.0);
 			our soundAnalysisArea() -> setGlobalYRange_fraction (0.0, 0.0);
@@ -66,6 +76,8 @@ Thing_define (SoundEditor, FunctionEditor) {
 		);
 		SoundAnalysisArea_drawDefaultLegends (our soundAnalysisArea().get());
 	}
+
+	#include "SoundEditor_prefs.h"
 };
 
 autoSoundEditor SoundEditor_create (

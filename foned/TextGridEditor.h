@@ -30,6 +30,8 @@ Thing_define (TextGridEditor, FunctionEditor) {
 
 	TextGrid textGrid() { return static_cast <TextGrid> (our data()); }
 
+	integer d_draggedBoundary;
+
 	void v_createMenuItems_help (EditorMenu menu)
 		override;
 	void v1_dataChanged (Editor sender) override {
@@ -41,22 +43,43 @@ Thing_define (TextGridEditor, FunctionEditor) {
 			our soundAnalysisArea() -> functionChanged (our soundArea() -> function());
 		}
 	}
+	void v_createMenus () override;
+	bool v_mouseInWideDataView (GuiDrawingArea_MouseEvent event, double x_world, double globalY_fraction)
+		override;
+	double textGridAreaHeight () {
+		if (! our soundArea())
+			return 1.0;
+		const integer numberOfTiers = our textGrid() -> tiers->size;
+		const integer numberOfVisibleChannels =
+				Melder_clippedRight (our soundArea() -> soundOrLongSound() -> ny, 8_integer);
+		const bool showAnalysis = our soundAnalysisArea() -> hasContentToShow();
+		const double automaticHeight = numberOfTiers / (2.0 * numberOfVisibleChannels +
+				numberOfTiers * ( showAnalysis ? 1.8 : 1.3 ));
+		const double textGridHeight = our instancePref_textGridHeight();
+		return ( textGridHeight > 0.0 ? Melder_clipped (0.05, textGridHeight, 0.9) : automaticHeight );
+	}
+	double soundAreaHeight () {
+		const double textGridHeight = our textGridAreaHeight();
+		if (! our soundArea() || ! our soundAnalysisArea() -> hasContentToShow())
+			return 1.0 - textGridHeight;
+		const double soundHeight = our instancePref_soundHeight();
+		double result = ( soundHeight > 0.0 ?
+				Melder_clipped (0.1, soundHeight, 0.9) : 0.5 * (1.0 - textGridHeight) );
+		if (result > 1.0 - textGridHeight - 0.05)
+			result = 1.0 - textGridHeight - 0.05;
+		return result;
+	}
 	void v_distributeAreas () override {
 		if (our soundArea()) {
-			const bool showAnalysis = our soundAnalysisArea() -> hasContentToShow();
-			const integer numberOfTiers = our textGrid() -> tiers->size;
-			const integer numberOfVisibleChannels =
-					Melder_clippedRight (our soundArea() -> soundOrLongSound() -> ny, 8_integer);
-			const double soundY = numberOfTiers / (2.0 * numberOfVisibleChannels +
-					numberOfTiers * ( showAnalysis ? 1.8 : 1.3 ));
-			our textGridArea() -> setGlobalYRange_fraction (0.0, soundY);
-			if (showAnalysis) {
-				const double soundY2 = 0.5 * (1.0 + soundY);
-				our soundAnalysisArea() -> setGlobalYRange_fraction (soundY, soundY2);
-				our soundArea() -> setGlobalYRange_fraction (soundY2, 1.0);
+			const double textGridHeight = our textGridAreaHeight();
+			our textGridArea() -> setGlobalYRange_fraction (0.0, textGridHeight);
+			if (our soundAnalysisArea() -> hasContentToShow()) {
+				const double soundBottom = 1.0 - our soundAreaHeight();
+				our soundAnalysisArea() -> setGlobalYRange_fraction (textGridHeight, soundBottom);
+				our soundArea() -> setGlobalYRange_fraction (soundBottom, 1.0);
 			} else {
-				our soundAnalysisArea() -> setGlobalYRange_fraction (soundY, soundY);
-				our soundArea() -> setGlobalYRange_fraction (soundY, 1.0);
+				our soundAnalysisArea() -> setGlobalYRange_fraction (textGridHeight, textGridHeight);
+				our soundArea() -> setGlobalYRange_fraction (textGridHeight, 1.0);
 			}
 		} else {
 			our textGridArea() -> setGlobalYRange_fraction (0.0, 1.0);
